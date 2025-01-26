@@ -40,8 +40,8 @@ jobs:
 
       - name: Show config env credentials
         env:
-          ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}  # Access variable from config environment
+          ECS_TASK_DEFINITION_2: ${{ vars.ECS_TASK_DEFINITION }}  # Access variable from config environment
         run: |
-          echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
+          echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION_2"
 
      
