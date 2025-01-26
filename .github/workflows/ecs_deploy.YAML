@@ -1,0 +1,45 @@
+name: Deploy container to ECS
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: write    # This is required for actions/checkout
+
+jobs:
+  build-and-deploy:
+    runs-on: [ ubuntu-latest ]
+    environment: prod
+    
+    steps:
+
+      - uses: actions/checkout@v3 # github Checkout
+
+      - name: List Files after copying repo to Ubuntu terminal  
+        run: ls -a
+
+      - name: show credentials
+        run: echo ${{ vars.AWS_ROLE }}
+        run: echo ${{ vars.AWS_REGION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE }} # Setting up connection using OIDC method. 
+          aws-region: ${{ vars.AWS_REGION }} # AWS region.
+
+      - name: Show config env credentials
+        environment: config  # Explicitly use the config environment
+        env:
+          ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}  # Access variable from config environment
+        run: |
+          echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
+
+      # - name: Download task definition
+      #   run: |
+      #     aws ecs describe-task-definition \
+      #     --task-definition $ECS_TASK_DEFINITION \
+      #     --query taskDefinition \
+      #     --region ${{ vars.AWS_REGION }} > ../../task-definition.json
