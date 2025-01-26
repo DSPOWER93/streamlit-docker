@@ -43,7 +43,7 @@ jobs:
           --task-definition $ECS_TASK_DEFINITION \
           --query taskDefinition \
           --region ${{ vars.AWS_REGION }} > ../../task-definition.json
-          cat task-definition.json
+          ls -a
          
 
      
