@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
 
+
+env:
+  # Define a global variable using the repository/organization-level variable
+  ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+
 permissions:
       id-token: write   # This is required for requesting the JWT
       contents: write    # This is required for actions/checkout
@@ -24,13 +29,14 @@ jobs:
         run: |
           echo ${{ vars.AWS_ROLE }}
           echo ${{ vars.AWS_REGION }}
-          echo ${{ vars.ECS_TASK_DEFINITION }}
+          echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ vars.AWS_ROLE }} # Setting up connection using OIDC method. 
           aws-region: ${{ vars.AWS_REGION }} # AWS region.
+          
 
       - name: Show config env credentials
         env:
