@@ -9,6 +9,7 @@ env:
   # Define a global variable using the repository/organization-level variable
   ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
 
+  
 permissions:
       id-token: write   # This is required for requesting the JWT
       contents: write    # This is required for actions/checkout
@@ -36,6 +37,12 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE }} # Setting up connection using OIDC method. 
           aws-region: ${{ vars.AWS_REGION }} # AWS region.
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
 
       - name: Download task definition
         run: |
