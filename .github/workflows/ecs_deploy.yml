@@ -32,7 +32,6 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }} # AWS region.
 
       - name: Show config env credentials
-        environment: config  # Explicitly use the config environment
         env:
           ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}  # Access variable from config environment
         run: |
