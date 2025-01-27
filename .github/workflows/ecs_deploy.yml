@@ -17,6 +17,8 @@ on:
 env:
   # Define a global variable using the repository/organization-level variable
   ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+  ECR_REPOSITORY_NAME: ${{ vars.ECR_REPOSITORY_NAME }} 
+
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -61,19 +63,18 @@ jobs:
           --task-definition $ECS_TASK_DEFINITION \
           --query taskDefinition \
           --region ${{ vars.AWS_REGION }} > task-definition.json
-          cat ${{ steps.login-ecr.outputs.registry }}
 
 
-      # - name: Build, tag, and push image to Amazon ECR
-      #   id: build-image
-      #   env:
-      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }} # ECR registery details from 
-      #     IMAGE_TAG: ${{ steps.increment-git-tag.outputs.git-tag }}
-      #     REPOSITORY: medical_code_mapping_repo # repo name
-      #   run: |
-      #     # Build a docker container and
-      #     # push it to ECR so that it can
-      #     # be deployed to ECS.
-      #     docker build -t $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG .
-      #     docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-      #     echo "image=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }} # ECR registery path from ecr Like: 123456789.dkr.ecr.us-east-1.amazonaws.com
+          IMAGE_TAG: ${{ inputs.tag }}
+          REPOSITORY: $ECR_REPOSITORY_NAME  # Docker repo name where Image has to be created.
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
