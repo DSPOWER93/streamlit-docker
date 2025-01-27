@@ -36,13 +36,12 @@ jobs:
       - name: List Files after copying repo to Ubuntu terminal  
         run: ls -a
 
-        
       - name: show credentials
         run: |
           echo ${{ vars.AWS_ROLE }}
           echo ${{ vars.AWS_REGION }}
           echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
-          echo "TAG:" ${{ inputs.environment }}
+          echo "TAG:" ${{ inputs.tag }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
