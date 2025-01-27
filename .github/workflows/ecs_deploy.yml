@@ -42,6 +42,7 @@ jobs:
           echo ${{ vars.AWS_ROLE }}
           echo ${{ vars.AWS_REGION }}
           echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
+          echo "TAG:" ${{ inputs.environment }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
