@@ -60,10 +60,10 @@ jobs:
         run: |
           if aws ecr describe-repositories --repository-names $ECR_REPO_NAME > /dev/null 2>&1; then
             echo "ECR repository $ECR_REPO_NAME already exists."
-            echo "SKIP_CREATION=true" >> $GITHUB_ENV
+            echo "SKIP_CREATION='true'" >> $GITHUB_ENV
           else
             echo "ECR repository $ECR_REPO_NAME does not exist. Proceeding with creation."
-            echo "SKIP_CREATION=false" >> $GITHUB_ENV
+            echo "SKIP_CREATION='false'" >> $GITHUB_ENV
           fi
           echo "To be skipped $SKIP_CREATION"
 
