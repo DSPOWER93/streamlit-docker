@@ -68,14 +68,19 @@ jobs:
           cat $GITHUB_ENV
           echo "To be skipped $SKIP_CREATION"
 
-      # - name: Deploy CloudFormation stack (if repository does not exist)
-      #   if: env.SKIP_CREATION == 'false'
-      #   run: |
-      #     aws cloudformation deploy \
-      #       --template-file cloudformation.yaml \
-      #       --stack-name my-ecr-repo-stack \
-      #       --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
-      #       --capabilities CAPABILITY_NAMED_IAM
+      - name: Deploy CloudFormation stack (if repository does not exist)
+        if: env.SKIP_CREATION == 'false'
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation.yaml \
+            --stack-name my-ecr-repo-stack \
+            --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+      - name: Skip CloudFormation deployment (if repository exists)
+        if: env.SKIP_CREATION == 'true'
+        run: |
+          echo "Skipping CloudFormation deployment because the ECR repository already exists."
 
       # - name: Download task definition
       #   run: |
