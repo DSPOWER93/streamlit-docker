@@ -1,0 +1,106 @@
+
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  # Define a global variable using the repository/organization-level variable
+  ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+  ECR_REPOSITORY_NAME: ${{ vars.ECR_REPOSITORY_NAME }} 
+
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: write    # This is required for actions/checkout
+
+
+name: Deploy container to ECS
+jobs:
+  build-and-deploy:
+    name: Deploy container to ECS
+    runs-on: [ ubuntu-latest ]
+    environment: ${{ inputs.environment }}
+    
+    steps:
+
+      - uses: actions/checkout@v3 # github Checkout
+      - name: List Files after copying repo to Ubuntu terminal  
+        run: ls -a
+
+      - name: show credentials
+        run: |
+          echo ${{ vars.AWS_ROLE }}
+          echo ${{ vars.AWS_REGION }}
+          echo "ECS_TASK_DEFINITION: $ECS_TASK_DEFINITION"
+          echo "TAG:" ${{ inputs.tag }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE }} # Setting up connection using OIDC method. 
+          aws-region: ${{ vars.AWS_REGION }} # AWS region.
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
+
+
+      - name: Read ECR repository name from config.json
+        id: read-config
+        run: |
+          ECR_REPO_NAME=$(jq -r '.ecrRepositoryName' config.json)
+          echo "ECR_REPO_NAME=$ECR_REPO_NAME" >> $GITHUB_ENV
+    
+      - name: Check if ECR repository already exists
+        id: check-ecr-repo
+        run: |
+          if aws ecr describe-repositories --repository-names $ECR_REPO_NAME > /dev/null 2>&1; then
+            echo "ECR repository $ECR_REPO_NAME already exists."
+            echo "SKIP_CREATION=true" >> $GITHUB_ENV
+          else
+            echo "ECR repository $ECR_REPO_NAME does not exist. Proceeding with creation."
+            echo "SKIP_CREATION=false" >> $GITHUB_ENV
+          fi
+
+      # - name: Download task definition
+      #   run: |
+      #     aws ecs describe-task-definition \
+      #     --task-definition $ECS_TASK_DEFINITION \
+      #     --query taskDefinition \
+      #     --region ${{ vars.AWS_REGION }} > task-definition.json
+      #     echo $ECR_REPOSITORY_NAME
+
+
+      # - name: Build, tag, and push image to Amazon ECR
+      #   id: build-image
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }} # ECR registery path from ecr Like: 123456789.dkr.ecr.us-east-1.amazonaws.com
+      #     IMAGE_TAG: ${{ inputs.tag }}
+      #   run: |
+      #     # Build a docker container and
+      #     # push it to ECR so that it can
+      #     # be deployed to ECS.
+      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG .
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG
+      #     echo "image=$ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # - name: Fill in the new image ID in the Amazon ECS task definition
+      #   id: task-def
+      #   uses: aws-actions/amazon-ecs-render-task-definition@v1
+      #   with:
+      #     task-definition: task-definition.json # Task definition downloaded from Step: Download task definition
+      #     container-name: ${{ vars.ECS_CONTAINER_NAME }} # Repository variable to name the container file from 
+      #     image: ${{ steps.build-image.outputs.image }}
+      
+      # - name: Deploy Amazon ECS task definition
+      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      #   with:
+      #     task-definition: ${{ steps.task-def.outputs.task-definition }}
+      #     service: medical_code_mapping_service_v2 # service name
+      #     cluster: medical_code_mapping_cluster # cluster Name
+      #     wait-for-service-stability: true
+
+

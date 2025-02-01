@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to create an ECR repository
+
+Parameters:
+  ECRRepositoryName:
+    Type: String
+    Description: Name of the ECR repository
+
+Resources:
+  MyECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ECRRepositoryName
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+Outputs:
+  RepositoryName:
+    Description: "Name of the ECR Repository"
+    Value: !Ref MyECRRepository
+  RepositoryUri:
+    Description: "URI of the ECR Repository"
+    Value: !GetAtt MyECRRepository.RepositoryUri
