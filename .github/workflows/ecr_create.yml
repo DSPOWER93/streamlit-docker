@@ -72,11 +72,11 @@ jobs:
         if: env.SKIP_CREATION == 'false'
         run: |
           aws cloudformation deploy \
-            --template-file cloudformation.yaml \
+            --template-file cloudformation_ecr.yml \
             --stack-name my-ecr-repo-stack \
             --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
             --capabilities CAPABILITY_NAMED_IAM
-            
+
       - name: Skip CloudFormation deployment (if repository exists)
         if: env.SKIP_CREATION == 'true'
         run: |
