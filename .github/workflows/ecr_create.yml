@@ -65,6 +65,16 @@ jobs:
             echo "ECR repository $ECR_REPO_NAME does not exist. Proceeding with creation."
             echo "SKIP_CREATION=false" >> $GITHUB_ENV
           fi
+          echo "To be skipped $SKIP_CREATION"
+
+      # - name: Deploy CloudFormation stack (if repository does not exist)
+      #   if: env.SKIP_CREATION == 'false'
+      #   run: |
+      #     aws cloudformation deploy \
+      #       --template-file cloudformation.yaml \
+      #       --stack-name my-ecr-repo-stack \
+      #       --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
+      #       --capabilities CAPABILITY_NAMED_IAM
 
       # - name: Download task definition
       #   run: |
