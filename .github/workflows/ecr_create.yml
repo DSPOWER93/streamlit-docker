@@ -15,7 +15,7 @@ permissions:
   contents: write    # This is required for actions/checkout
 
 
-name: Deploy container to ECS
+name: Create Image in ECR & Deploy container to ECS
 jobs:
   build-and-deploy:
     name: Deploy container to ECS
@@ -53,6 +53,7 @@ jobs:
         run: |
           ECR_REPO_NAME=$(jq -r '.ecrRepositoryName' config.json)
           echo "ECR_REPO_NAME=$ECR_REPO_NAME" >> $GITHUB_ENV
+          echo "$ECR_REPO_NAME"
     
       - name: Check if ECR repository already exists
         id: check-ecr-repo
