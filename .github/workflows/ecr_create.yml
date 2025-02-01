@@ -20,7 +20,7 @@ jobs:
   build-and-deploy:
     name: Deploy container to ECS
     runs-on: [ ubuntu-latest ]
-    environment: ${{ inputs.environment }}
+    environment: prod
     
     steps:
 
