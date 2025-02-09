@@ -49,19 +49,19 @@ Resources:
               HostPort: 8501
               Protocol: tcp
               AppProtocol: http
-          Environment:
+          Secrets:  # <-- Use Secrets instead of Environment for secure values
             - Name: OPENAI_API_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/OPENAI_API_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/OPENAI_API_KEY"
             - Name: ATHENA_ACCESS_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/ATHENA_ACCESS_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_ACCESS_KEY"
             - Name: ATHENA_SECRET_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/ATHENA_SECRET_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_SECRET_KEY"
             - Name: MASTER_ACCESS_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/MASTER_ACCESS_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_ACCESS_KEY"
             - Name: MASTER_SECRET_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/MASTER_SECRET_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_SECRET_KEY"
             - Name: PINECONE_API_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/secure/PINECONE_API_KEY}}'
+              ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/PINECONE_API_KEY"
 
 Outputs:
   TaskDefinitionArn:
