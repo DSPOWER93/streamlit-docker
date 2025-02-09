@@ -1,0 +1,11 @@
+{
+    "ecrRepositoryName": "new-streamlit-docker-app",
+    "ecrCloudFormationJobName":"new-streamlit-docker-cloud-formation",
+    "taskDefinition": {
+      "name": "new-docker-streamlit-task-definition",
+      "cloudFormationTemplateName": "new-docker-streamlit-ecs-cf",
+      "containerName": "new-docker-streamlit-container",
+      "portMappingName": "my-port-mapping",
+      "taskExecutionRoleArn": "arn:aws:iam::414506459202:role/ecsTaskExecutionRole"
+  }
+  }

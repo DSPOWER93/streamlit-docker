@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Task Definition for Fargate
+
+Parameters:
+  TaskDefinitionName:
+    Type: String
+    Description: Name of the ECS Task Definition
+  ContainerName:
+    Type: String
+    Description: Name of the container
+  ImageArn:
+    Type: String
+    Description: ARN of the container image
+  PortMappingName:
+    Type: String
+    Description: Name for the port mapping
+  AccountId:
+    Type: String
+    Description: AWS Account ID
+  Region:
+    Type: String
+    Description: AWS Region
+  ExistingTaskExecutionRoleArn:
+    Type: String
+    Description: ARN of the existing ECS Task Execution Role
+
+Resources:
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref TaskDefinitionName
+      Cpu: '256'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: 
+        - FARGATE
+      ExecutionRoleArn: !Ref ExistingTaskExecutionRoleArn
+      TaskRoleArn: !Ref ExistingTaskExecutionRoleArn
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: X86_64
+      ContainerDefinitions:
+        - Name: !Ref ContainerName
+          Image: !Ref ImageArn
+          Essential: true
+          PortMappings:
+            - Name: !Ref PortMappingName
+              ContainerPort: 8501
+              HostPort: 8501
+              Protocol: tcp
+              AppProtocol: http
+          Environment:
+            - Name: OPENAI_API_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/OPENAI_API_KEY}}'
+            - Name: ATHENA_ACCESS_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_ACCESS_KEY}}'
+            - Name: ATHENA_SECRET_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_SECRET_KEY}}'
+            - Name: MASTER_ACCESS_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_ACCESS_KEY}}'
+            - Name: MASTER_SECRET_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_SECRET_KEY}}'
+            - Name: PINECONE_API_KEY
+              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/PINECONE_API_KEY}}'
+
+Outputs:
+  TaskDefinitionArn:
+    Description: ARN of the created Task Definition
+    Value: !Ref ECSTaskDefinition
