@@ -126,14 +126,14 @@ jobs:
       - name: Deploy CloudFormation Stack for Task Definition
         run: |
           aws cloudformation deploy \
-            --stack-name $TASK_CF_NAME \
+            --stack-name ${{ env.TASK_CF_NAME }} \
             --template-file cloudformation/task_definition.yml \
             --parameter-overrides \
                 TaskDefinitionName=${{ env.TASK_NAME }} \
                 ContainerName=${{ env.CONTAINER_NAME }} \
                 ImageArn=${{ env.ecr_image_uri }} \
                 PortMappingName=${{ env.PORT_MAPPING_NAME }} \
-                AccountId=${{ vars.AWS_ACCOUNT_ID }} \
+                AccountId=${{ vars.ACCOUNT_ID }} \
                 Region=${{ vars.AWS_REGION }} \
                 ExistingTaskExecutionRoleArn=${{ env.TASK_EXECUTION_ROLE_ARN }} \
             --capabilities CAPABILITY_IAM
