@@ -51,17 +51,17 @@ Resources:
               AppProtocol: http
           Environment:
             - Name: OPENAI_API_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/OPENAI_API_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/OPENAI_API_KEY}}'
             - Name: ATHENA_ACCESS_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_ACCESS_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_ACCESS_KEY}}'
             - Name: ATHENA_SECRET_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_SECRET_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/ATHENA_SECRET_KEY}}'
             - Name: MASTER_ACCESS_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_ACCESS_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_ACCESS_KEY}}'
             - Name: MASTER_SECRET_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_SECRET_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_SECRET_KEY}}'
             - Name: PINECONE_API_KEY
-              Value: !Sub '{{resolve:ssm:arn:aws:ssm:${Region}:${AccountId}:parameter/PINECONE_API_KEY}}'
+              Value: !Sub '{{resolve:ssm-secure:arn:aws:ssm:${Region}:${AccountId}:parameter/PINECONE_API_KEY}}'
 
 Outputs:
   TaskDefinitionArn:
