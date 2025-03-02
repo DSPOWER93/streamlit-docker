@@ -98,6 +98,7 @@ jobs:
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
           aws cloudformation delete-stack --stack-name $CF_ECR_JOB_NAME
+          sleep 30
           aws cloudformation deploy \
             --template-file cloudformation/cloudformation_ecr.yml \
             --stack-name $CF_ECR_JOB_NAME \
@@ -129,6 +130,7 @@ jobs:
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
           aws cloudformation delete-stack --stack-name ${{ env.TASK_CF_NAME }}
+          sleep 30
           aws cloudformation deploy \
             --stack-name ${{ env.TASK_CF_NAME }} \
             --template-file cloudformation/task_definition.yml \
