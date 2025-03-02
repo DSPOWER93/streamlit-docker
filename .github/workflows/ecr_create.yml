@@ -96,6 +96,8 @@ jobs:
       - name: Deploy CloudFormation stack for ECR Repo (if repository does not exist)
         if: env.SKIP_CREATION == 'false'
         run: |
+          # Ensure cloudformation stack doesn't exist before creating a new one.
+          aws cloudformation delete-stack --stack-name $CF_ECR_JOB_NAME
           aws cloudformation deploy \
             --template-file cloudformation/cloudformation_ecr.yml \
             --stack-name $CF_ECR_JOB_NAME \
@@ -125,6 +127,8 @@ jobs:
 
       - name: Deploy CloudFormation Stack for Task Definition
         run: |
+          # Ensure cloudformation stack doesn't exist before creating a new one.
+          aws cloudformation delete-stack --stack-name ${{ env.TASK_CF_NAME }}
           aws cloudformation deploy \
             --stack-name ${{ env.TASK_CF_NAME }} \
             --template-file cloudformation/task_definition.yml \
