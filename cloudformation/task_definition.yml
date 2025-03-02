@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Task Definition for Fargate
+Description: ECS Task Definition for Fargate with CloudWatch Logging
 
 Parameters:
   TaskDefinitionName:
@@ -23,6 +23,10 @@ Parameters:
   ExistingTaskExecutionRoleArn:
     Type: String
     Description: ARN of the existing ECS Task Execution Role
+  LogGroupName:
+    Type: String
+    Default: "/ecs/default-log-group"
+    Description: Name of the CloudWatch Logs group for ECS
 
 Resources:
   ECSTaskDefinition:
@@ -49,7 +53,7 @@ Resources:
               HostPort: 8501
               Protocol: tcp
               AppProtocol: http
-          Secrets:  # <-- Use Secrets instead of Environment for secure values
+          Secrets:
             - Name: OPENAI_API_KEY
               ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/OPENAI_API_KEY"
             - Name: ATHENA_ACCESS_KEY
@@ -62,8 +66,16 @@ Resources:
               ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/MASTER_SECRET_KEY"
             - Name: PINECONE_API_KEY
               ValueFrom: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/PINECONE_API_KEY"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupName
+              awslogs-region: !Ref Region
+              awslogs-stream-prefix: ecs
+              mode: non-blocking
 
 Outputs:
   TaskDefinitionArn:
     Description: ARN of the created Task Definition
     Value: !Ref ECSTaskDefinition
+

@@ -141,6 +141,7 @@ jobs:
                 AccountId=${{ vars.ACCOUNT_ID }} \
                 Region=${{ vars.AWS_REGION }} \
                 ExistingTaskExecutionRoleArn=${{ env.TASK_EXECUTION_ROLE_ARN }} \
+                LogGroupName="/ecs/${{ env.TASK_NAME }}" \
             --capabilities CAPABILITY_IAM
 
       # - name: Download task definition
