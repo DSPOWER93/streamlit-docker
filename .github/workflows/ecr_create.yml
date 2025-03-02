@@ -121,9 +121,8 @@ jobs:
           # be deployed to ECS.
           docker build -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
-          ecr_image_uri=$ECR_REGISTRY/$ECR_REPO_NAME
+          ecr_image_uri=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
           echo "ecr_image_uri=$ecr_image_uri" >> $GITHUB_ENV
-
           echo $ecr_image_uri
 
       - name: Deploy CloudFormation Stack for Task Definition
