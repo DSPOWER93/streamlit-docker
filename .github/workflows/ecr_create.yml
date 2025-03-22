@@ -98,7 +98,9 @@ jobs:
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
           aws cloudformation delete-stack --stack-name $CF_ECR_JOB_NAME
+          # Buffer time period between Delelting existing old stack and creating new one.
           sleep 30
+          #deploy cloud formation stack to create ECR repo
           aws cloudformation deploy \
             --template-file cloudformation/cloudformation_ecr.yml \
             --stack-name $CF_ECR_JOB_NAME \
