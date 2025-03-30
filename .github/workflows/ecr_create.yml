@@ -10,20 +10,9 @@ on:
         required: true
 
 
-# on:
-#   push:
-#     branches: [ main ]
-
-# env:
-#   # Define a global variable using the repository/organization-level variable
-#   ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
-#   ECR_REPOSITORY_NAME: ${{ vars.ECR_REPOSITORY_NAME }} 
-
-
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: write    # This is required for actions/checkout
-
 
 name: Create Image in ECR & Deploy container to ECS
 jobs:
@@ -59,26 +48,28 @@ jobs:
       - name: Extract variables from config.json
         id: read-config
         run: |
-          ECR_REPO_NAME=$(jq -r '.ecrRepositoryName' config/config.json)
-          echo "ECR_REPO_NAME=$ECR_REPO_NAME" >> $GITHUB_ENV
-
-          CF_ECR_JOB_NAME=$(jq -r '.ecrCloudFormationJobName' config/config.json)
-          echo "CF_ECR_JOB_NAME=$CF_ECR_JOB_NAME" >> $GITHUB_ENV
-
-          TASK_NAME=$(jq -r '.taskDefinition.name' config/config.json)
-          echo "TASK_NAME=$TASK_NAME" >> $GITHUB_ENV
-
-          CONTAINER_NAME=$(jq -r '.taskDefinition.containerName' config/config.json)
-          echo "CONTAINER_NAME=$CONTAINER_NAME" >> $GITHUB_ENV
-
-          PORT_MAPPING_NAME=$(jq -r '.taskDefinition.portMappingName' config/config.json)
-          echo "PORT_MAPPING_NAME=$PORT_MAPPING_NAME" >> $GITHUB_ENV
-
-          TASK_EXECUTION_ROLE_ARN=$(jq -r '.taskDefinition.taskExecutionRoleArn' config/config.json)
-          echo "TASK_EXECUTION_ROLE_ARN=$TASK_EXECUTION_ROLE_ARN" >> $GITHUB_ENV
+          config_file="config/config.json"
           
-          TASK_CF_NAME=$(jq -r '.taskDefinition.cloudFormationTemplateName' config/config.json)
-          echo "TASK_CF_NAME=$TASK_CF_NAME" >> $GITHUB_ENV
+          # Define variable mappings (environment variable name → jq path)
+          declare -A var_mappings=(
+            ["ECR_REPO_NAME"]=".ecrRepositoryName"
+            ["CF_ECR_JOB_NAME"]=".ecrCloudFormationJobName"
+            ["TASK_NAME"]=".taskDefinition.name"
+            ["CONTAINER_NAME"]=".taskDefinition.containerName"
+            ["PORT_MAPPING_NAME"]=".taskDefinition.portMappingName"
+            ["TASK_EXECUTION_ROLE_ARN"]=".taskDefinition.taskExecutionRoleArn"
+            ["TASK_CF_NAME"]=".taskDefinition.cloudFormationTemplateName"
+            ["ECS_TASK_NAME"]=".ECSCluster.name"
+            ["ECS_CLUSTER_NAME"]=".ECSCluster.clusterName"
+            ["ECS_CLUSTER_INFRA"]=".ECSCluster.infrastructure"
+          )
+          
+          # Extract and set each variable
+          for var_name in "${!var_mappings[@]}"; do
+            var_value=$(jq -r "${var_mappings[$var_name]}" "$config_file")
+            echo "$var_name=$var_value" >> $GITHUB_ENV
+            echo "Set $var_name to $var_value"
+          done
 
       - name: Check if ECR repository already exists
         id: check-ecr-repo
@@ -146,81 +137,15 @@ jobs:
                 LogGroupName="/ecs/${{ env.TASK_NAME }}" \
             --capabilities CAPABILITY_IAM
 
-      # - name: Download task definition
-      #   run: |
-      #     aws ecs describe-task-definition \
-      #     --task-definition $ECS_TASK_DEFINITION \
-      #     --query taskDefinition \
-      #     --region ${{ vars.AWS_REGION }} > task-definition.json
-      #     echo $ECR_REPOSITORY_NAME
-
-
-
-      # - name: Fill in the new image ID in the Amazon ECS task definition
-      #   id: task-def
-      #   uses: aws-actions/amazon-ecs-render-task-definition@v1
-      #   with:
-      #     task-definition: task-definition.json # Task definition downloaded from Step: Download task definition
-      #     container-name: ${{ vars.ECS_CONTAINER_NAME }} # Repository variable to name the container file from 
-      #     image: ${{ steps.build-image.outputs.image }}
-      
-      # - name: Deploy Amazon ECS task definition
-      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      #   with:
-      #     task-definition: ${{ steps.task-def.outputs.task-definition }}
-      #     service: medical_code_mapping_service_v2 # service name
-      #     cluster: medical_code_mapping_cluster # cluster Name
-      #     wait-for-service-stability: true
-
-
-# name: Deploy ECS Task Definition
-
-# on:
-#   workflow_dispatch:
-
-# permissions:
-#   id-token: write
-#   contents: read
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
-#           aws-region: us-east-1
-
-#       - name: Read config values
-#         id: config
-#         run: |
-#           TASK_NAME=$(jq -r '.taskDefinition.name' config/config.json)
-#           CONTAINER_NAME=$(jq -r '.taskDefinition.containerName' config/config.json)
-#           IMAGE_ARN=$(jq -r '.taskDefinition.imageArn' config/config.json)
-#           PORT_MAPPING_NAME=$(jq -r '.taskDefinition.portMappingName' config/config.json)
-#           TASK_EXECUTION_ROLE_ARN=$(jq -r '.taskDefinition.taskExecutionRoleArn' config/config.json)
-#           echo "TASK_NAME=$TASK_NAME" >> $GITHUB_ENV
-#           echo "CONTAINER_NAME=$CONTAINER_NAME" >> $GITHUB_ENV
-#           echo "IMAGE_ARN=$IMAGE_ARN" >> $GITHUB_ENV
-#           echo "PORT_MAPPING_NAME=$PORT_MAPPING_NAME" >> $GITHUB_ENV
-#           echo "TASK_EXECUTION_ROLE_ARN=$TASK_EXECUTION_ROLE_ARN" >> $GITHUB_ENV
-
-#       - name: Deploy CloudFormation Stack
-#         run: |
-#           aws cloudformation deploy \
-#             --stack-name ecs-task-definition-stack \
-#             --template-file cloudformation/task-definition.yaml \
-#             --parameter-overrides \
-#                 TaskDefinitionName=${{ env.TASK_NAME }} \
-#                 ContainerName=${{ env.CONTAINER_NAME }} \
-#                 ImageArn=${{ env.IMAGE_ARN }} \
-#                 PortMappingName=${{ env.PORT_MAPPING_NAME }} \
-#                 AccountId=${{ secrets.AWS_ACCOUNT_ID }} \
-#                 Region=${{ env.AWS_REGION }} \
-#                 ExistingTaskExecutionRoleArn=${{ env.TASK_EXECUTION_ROLE_ARN }} \
-#             --capabilities CAPABILITY_IAM
-
+      - name: ECS-Cluster stack with AWS CloudFormation template
+        run: |
+          # Ensure cloudformation stack doesn't exist before creating a new one.
+          aws cloudformation delete-stack --stack-name ${{ env.ECS_TASK_NAME }}
+          sleep 30
+          aws cloudformation deploy \
+            --stack-name ${{ env.ECS_TASK_NAME }} \
+            --template-file cloudformation/ecs_cluster.yml \
+            --parameter-overrides \
+                ClusterName=${{ env.ECS_CLUSTER_NAME }} \
+                Infrastructure=${{ env.ECS_CLUSTER_INFRA }} \
+            --capabilities CAPABILITY_IAM

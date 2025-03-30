@@ -7,5 +7,10 @@
       "containerName": "new-docker-streamlit-container",
       "portMappingName": "my-port-mapping",
       "taskExecutionRoleArn": "arn:aws:iam::414506459202:role/ecsTaskExecutionRole"
-  }
+    },
+    "ECSCluster":{
+      "name":"ecs-c;uster-deploy",
+      "clusterName":"new-streamlit-docker-cluster",
+      "infrastructure":"AWS Fargate Serverless"
+    }
   }

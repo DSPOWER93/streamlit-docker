@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create an ECS cluster with CloudWatch Container Insights enabled'
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name of the ECS cluster
+    
+  Infrastructure:
+    Type: String
+    Default: 'AWS Fargate Serverless'
+    Description: The infrastructure type for the ECS cluster
+    AllowedValues:
+      - 'AWS Fargate Serverless'
+      - 'EC2 Instances'
+
+Conditions:
+  IsFargate: !Equals [!Ref Infrastructure, 'AWS Fargate Serverless']
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enhanced  # Enable CloudWatch Container Insights with enhanced observability
+      CapacityProviders:
+        - !If [IsFargate, 'FARGATE', !Ref 'AWS::NoValue']
+        - !If [IsFargate, 'FARGATE_SPOT', !Ref 'AWS::NoValue']
+      DefaultCapacityProviderStrategy:
+        - !If 
+          - IsFargate
+          - CapacityProvider: FARGATE
+            Weight: 1
+          - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: Infrastructure
+          Value: !Ref Infrastructure
+
+Outputs:
+  ClusterName:
+    Description: The name of the ECS cluster
+    Value: !Ref ECSCluster
+  ClusterArn:
+    Description: The ARN of the ECS cluster
+    Value: !GetAtt ECSCluster.Arn
