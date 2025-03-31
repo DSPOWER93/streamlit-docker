@@ -9,7 +9,7 @@
       "taskExecutionRoleArn": "arn:aws:iam::414506459202:role/ecsTaskExecutionRole"
     },
     "ECSCluster":{
-      "name":"ecs-c;uster-deploy",
+      "name":"ecs-cluster-deploy",
       "clusterName":"new-streamlit-docker-cluster",
       "infrastructure":"AWS Fargate Serverless"
     }
