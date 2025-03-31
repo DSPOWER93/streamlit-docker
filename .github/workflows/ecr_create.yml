@@ -147,5 +147,5 @@ jobs:
             --template-file cloudformation/ecs_cluster.yml \
             --parameter-overrides \
                 ClusterName=${{ env.ECS_CLUSTER_NAME }} \
-                Infrastructure=${{ env.ECS_CLUSTER_INFRA }} \
+                "Infrastructure=${{ env.ECS_CLUSTER_INFRA }}" \
             --capabilities CAPABILITY_IAM
