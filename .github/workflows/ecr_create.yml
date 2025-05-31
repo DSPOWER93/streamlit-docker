@@ -153,7 +153,7 @@ jobs:
                 "Infrastructure=${{ env.ECS_CLUSTER_INFRA }}" \
             --capabilities CAPABILITY_IAM
       
-      - name: Step 11- Get default VPC and subnets (Alternative)
+      - name: Step 11- Get default VPC and subnets
         id: vpc
         run: |
           # Get default VPC ID
@@ -164,12 +164,25 @@ jobs:
           SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=${VPC_ID}" "Name=group-name,Values=default" --query "SecurityGroups[0].GroupId" --output text)
           echo "sg_id=${SG_ID}" >> $GITHUB_OUTPUT
           
-          # Get subnet IDs using JSON output and jq
-          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output json | jq -r '. | join(",")')
+          # Get subnet IDs for the default VPC
+          RAW_SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output text)
+          
+          # Convert tabs to commas
+          SUBNET_IDS=$(echo "$RAW_SUBNET_IDS" | tr '\t' ',' | tr ' ' ',')
+          
+          # VALIDATION STEP: Remove leading/trailing commas and multiple consecutive commas
+          SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/^,*//;s/,*$//' | sed 's/,,*/,/g')
+          
+          # Ensure no empty values remain
+          SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/,$//' | sed 's/^,//')
+          
           echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
           
-          # Debug output
-          echo "Debug - Subnet IDs: ${SUBNET_IDS}"
+          # Debug output to verify the format
+          echo "Debug - Raw subnet output: '$RAW_SUBNET_IDS'"
+          echo "Debug - Final subnet IDs: '$SUBNET_IDS'"
+          echo "Debug - First character check: '$(echo "$SUBNET_IDS" | cut -c1)'"
+
       
       - name: Step 12- Read config file
         id: config
