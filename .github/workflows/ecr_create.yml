@@ -176,7 +176,7 @@ jobs:
           # Ensure no empty values remain
           SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/,$//' | sed 's/^,//')
           
-          echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
+          echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUTTASK_NAME
           
           # Debug output to verify the format
           echo "Debug - Final subnet IDs: '$SUBNET_IDS'"
@@ -186,20 +186,26 @@ jobs:
         run: |
           echo "config=$(cat config/config.json | jq -c)" >> $GITHUB_OUTPUT
 
-      - name: Step 13- Delete existing CloudFormation stack
+      - name: Step 13- Clean up step for Deploy AWS CloudFormation template
         run: |
+          # Deleting existing cloud formation stack
           aws cloudformation delete-stack --stack-name ${{ fromJson(steps.config.outputs.config).ECSClusterServiceStackName }}
-          # Wait for 20 Seconds after deleting the Cloud formmation stack   
+          # Wait for 20 Seconds after deleting the Cloud formation stack   
           sleep 20
-
-
+          # Creating clean service name and setting it as environment variable
+          CLEAN_SERVICE_NAME=$(echo "${{ env.TASK_NAME }}-${{ inputs.tag }}" | sed 's/\./-/g')
+          echo "CLEAN_SERVICE_NAME=${CLEAN_SERVICE_NAME}" >> $GITHUB_ENV
+          # Debug output
+          echo "Debug - Clean Service Name: ${CLEAN_SERVICE_NAME}"
+        
       - name: Step 14- Deploy AWS CloudFormation template
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: ${{ fromJson(steps.config.outputs.config).ECSClusterServiceStackName }}
           template: cloudformation/ecs_service_deploy.yml
-          parameter-overrides: 'ClusterName=${{ env.ECS_CLUSTER_NAME }},TaskDefinitionFamily=${{ env.ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY }},ServiceName=${{ env.TASK_NAME }}-${{ inputs.tag }},DesiredCount=${{ env.ECS_DEPLOY_CONFIG_DESIRED_TASK }},SubnetIds="${{ steps.validate.outputs.clean_subnet_ids || steps.vpc.outputs.subnet_ids }}",SecurityGroupId=${{ steps.vpc.outputs.sg_id }},CapacityProviderName=${{ env.ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER }},CapacityProviderBase=1,CapacityProviderWeight=1,PlatformVersion=LATEST'
+          parameter-overrides: 'ClusterName=${{ env.ECS_CLUSTER_NAME }},TaskDefinitionFamily=${{ env.ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY }},ServiceName=${{ env.CLEAN_SERVICE_NAME }},DesiredCount=${{ env.ECS_DEPLOY_CONFIG_DESIRED_TASK }},SubnetIds="${{ steps.validate.outputs.clean_subnet_ids || steps.vpc.outputs.subnet_ids }}",SecurityGroupId=${{ steps.vpc.outputs.sg_id }},CapacityProviderName=${{ env.ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER }},CapacityProviderBase=1,CapacityProviderWeight=1,PlatformVersion=LATEST'
           no-fail-on-empty-changeset: "1"
+        
 
 
 
