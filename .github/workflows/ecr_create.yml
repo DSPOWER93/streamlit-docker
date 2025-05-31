@@ -101,7 +101,7 @@ jobs:
             --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
             --capabilities CAPABILITY_NAMED_IAM
 
-      - name: SStep 7/2- kip CloudFormation deployment (if repository exists)
+      - name: Step 7/2- kip CloudFormation deployment (if repository exists)
         if: env.SKIP_CREATION == 'true'
         run: |
           echo "Skipping CloudFormation deployment because the ECR repository already exists."
@@ -153,7 +153,6 @@ jobs:
                 "Infrastructure=${{ env.ECS_CLUSTER_INFRA }}" \
             --capabilities CAPABILITY_IAM
       
-      
       - name: Step 11- Get default VPC and subnets
         id: vpc
         run: |
@@ -165,10 +164,16 @@ jobs:
           SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=${VPC_ID}" "Name=group-name,Values=default" --query "SecurityGroups[0].GroupId" --output text)
           echo "sg_id=${SG_ID}" >> $GITHUB_OUTPUT
           
-          # Get subnet IDs for the default VPC
-          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
+          # Get subnet IDs for the default VPC - FIXED VERSION
+          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output text | tr ' ' ',' | tr '\t' ',')
+          # Remove any leading/trailing commas and empty values
+          SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/^,*//;s/,*$//' | sed 's/,,*/,/g')
           echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
+          
+          # Debug output
+          echo "Debug - Subnet IDs: ${SUBNET_IDS}"
 
+      
       - name: Step 12- Read config file
         id: config
         run: |
