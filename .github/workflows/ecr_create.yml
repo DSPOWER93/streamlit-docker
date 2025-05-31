@@ -153,7 +153,7 @@ jobs:
                 "Infrastructure=${{ env.ECS_CLUSTER_INFRA }}" \
             --capabilities CAPABILITY_IAM
       
-      - name: Step 11- Get default VPC and subnets
+      - name: Step 11- Get default VPC and subnets (Alternative)
         id: vpc
         run: |
           # Get default VPC ID
@@ -164,15 +164,12 @@ jobs:
           SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=${VPC_ID}" "Name=group-name,Values=default" --query "SecurityGroups[0].GroupId" --output text)
           echo "sg_id=${SG_ID}" >> $GITHUB_OUTPUT
           
-          # Get subnet IDs for the default VPC - FIXED VERSION
-          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output text | tr ' ' ',' | tr '\t' ',')
-          # Remove any leading/trailing commas and empty values
-          SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/^,*//;s/,*$//' | sed 's/,,*/,/g')
+          # Get subnet IDs using JSON output and jq
+          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output json | jq -r '. | join(",")')
           echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
           
           # Debug output
           echo "Debug - Subnet IDs: ${SUBNET_IDS}"
-
       
       - name: Step 12- Read config file
         id: config
