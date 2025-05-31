@@ -1,16 +1,39 @@
 {
-    "ecrRepositoryName": "new-streamlit-docker-app",
-    "ecrCloudFormationJobName":"new-streamlit-docker-cloud-formation",
-    "taskDefinition": {
-      "name": "new-docker-streamlit-task-definition",
-      "cloudFormationTemplateName": "new-docker-streamlit-ecs-cf",
-      "containerName": "new-docker-streamlit-container",
-      "portMappingName": "my-port-mapping",
-      "taskExecutionRoleArn": "arn:aws:iam::414506459202:role/ecsTaskExecutionRole"
+  "ecrRepositoryName": "streamlit-docker-frontend-app",
+  "ecrCloudFormationJobName": "streamlit-docker-frontend-cloud-formation",
+  "taskDefinition": {
+    "name": "docker-frontend-streamlit-task-definition",
+    "cloudFormationTemplateName": "docker-frontend-streamlit-ecs-cf",
+    "containerName": "docker-frontend-streamlit-container",
+    "portMappingName": "my-port-mapping",
+    "taskExecutionRoleArn": "arn:aws:iam::414506459202:role/ecsTaskExecutionRole"
+  },
+  "ECSCluster": {
+    "name": "ecs-cluster-deploy",
+    "clusterName": "streamlit-docker-frontend-cluster",
+    "infrastructure": "AWS Fargate Serverless"
+  },
+  "ECSClusterServiceStackName":"streamlit-docker-frontend-app-ecs-service-stack",
+  "ECSClusterService": {
+    "computeConfiguration": {
+      "computeOptions": "capacity provider strategy",
+      "capacityProviderStrategy": {
+        "capacityProvider": "FARGATE",
+        "base": 1,
+        "weight": 1,
+        "platformVersion": "LATEST"
+      }
     },
-    "ECSCluster":{
-      "name":"ecs-cluster-deploy",
-      "clusterName":"new-streamlit-docker-cluster",
-      "infrastructure":"AWS Fargate Serverless"
+    "deploymentConfiguration": {
+      "applicationType": "Service",
+      "taskDefinitionFamily": "docker-frontend-streamlit-task-definition",
+      "serviceName": "docker-frontend-streamlit-task-definition",
+      "serviceType": "replica",
+      "desiredTask": 1
+    },
+    "networking": {
+      "vpc": "Default VPC",
+      "securityGroup": "Default Security Group"
     }
   }
+}

@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create ECS Service within an existing cluster'
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name of the ECS cluster
+  
+  TaskDefinitionFamily:
+    Type: String
+    Description: The family of the task definition
+  
+  ServiceName:
+    Type: String
+    Description: Name of the ECS service
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+    Description: Number of tasks to run
+  
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: The subnet IDs (default subnets)
+  
+  SecurityGroupId:
+    Type: String
+    Description: The security group ID (default security group)
+  
+  CapacityProviderName:
+    Type: String
+    Default: FARGATE
+    Description: The capacity provider to use for the service
+  
+  CapacityProviderBase:
+    Type: Number
+    Default: 1
+    Description: The base value for the capacity provider
+  
+  CapacityProviderWeight:
+    Type: Number
+    Default: 1
+    Description: The weight value for the capacity provider
+  
+  PlatformVersion:
+    Type: String
+    Default: LATEST
+    Description: The platform version to use for the service
+
+Resources:
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ClusterName
+      TaskDefinition: !Ref TaskDefinitionFamily
+      ServiceName: !Ref ServiceName
+      DesiredCount: !Ref DesiredCount
+      CapacityProviderStrategy:
+        - CapacityProvider: !Ref CapacityProviderName
+          Base: !Ref CapacityProviderBase
+          Weight: !Ref CapacityProviderWeight
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroupId
+          Subnets: !Ref SubnetIds
+      PlatformVersion: !Ref PlatformVersion
+      SchedulingStrategy: REPLICA
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      DeploymentController:
+        Type: ECS
+      EnableECSManagedTags: true
+
+Outputs:
+  ServiceName:
+    Description: The name of the ECS service
+    Value: !Ref ECSService
+  
+  ServiceArn:
+    Description: The ARN of the ECS service
+    Value: !GetAtt ECSService.Arn
+  
+  ClusterName:
+    Description: The name of the ECS cluster
+    Value: !Ref ClusterName

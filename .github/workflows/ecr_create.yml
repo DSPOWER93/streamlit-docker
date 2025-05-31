@@ -24,28 +24,28 @@ jobs:
     steps:
 
       - uses: actions/checkout@v3 # github Checkout
-      - name: List Files after copying repo to Ubuntu terminal  
+      - name: Step 1- List Files after copying repo to Ubuntu terminal  
         run: ls -a
 
-      - name: show Variables
+      - name: Step 2- show Variables
         run: |
           echo ${{ vars.AWS_ROLE }}
           echo ${{ vars.AWS_REGION }}
           echo "TAG:" ${{ inputs.tag }}
 
-      - name: Configure AWS credentials
+      - name: Step 3- Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ vars.AWS_ROLE }} # Setting up connection using OIDC method. 
           aws-region: ${{ vars.AWS_REGION }} # AWS region.
 
-      - name: Login to Amazon ECR
+      - name: Step 4- Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
           mask-password: 'true'
 
-      - name: Extract variables from config.json
+      - name: Step 5- Extract variables from config.json
         id: read-config
         run: |
           config_file="config/config.json"
@@ -62,6 +62,9 @@ jobs:
             ["ECS_TASK_NAME"]=".ECSCluster.name"
             ["ECS_CLUSTER_NAME"]=".ECSCluster.clusterName"
             ["ECS_CLUSTER_INFRA"]=".ECSCluster.infrastructure"
+            ["ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY"]=".ECSClusterService.deploymentConfiguration.taskDefinitionFamily"
+            ["ECS_DEPLOY_CONFIG_DESIRED_TASK"]=".ECSClusterService.deploymentConfiguration.desiredTask"
+            ["ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER"]=".ECSClusterService.computeConfiguration.capacityProviderStrategy.capacityProvider"
           )
           
           # Extract and set each variable
@@ -71,7 +74,7 @@ jobs:
             echo "Set $var_name to $var_value"
           done
 
-      - name: Check if ECR repository already exists
+      - name: Step 6- Check if ECR repository already exists
         id: check-ecr-repo
         run: |
           if aws ecr describe-repositories --repository-names $ECR_REPO_NAME > /dev/null 2>&1; then
@@ -84,7 +87,7 @@ jobs:
           cat $GITHUB_ENV
           echo "To be skipped $SKIP_CREATION"
 
-      - name: Deploy CloudFormation stack for ECR Repo (if repository does not exist)
+      - name: Step 7/1- Deploy CloudFormation stack for ECR Repo (if repository does not exist)
         if: env.SKIP_CREATION == 'false'
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
@@ -98,12 +101,12 @@ jobs:
             --parameter-overrides ECRRepositoryName=$ECR_REPO_NAME \
             --capabilities CAPABILITY_NAMED_IAM
 
-      - name: Skip CloudFormation deployment (if repository exists)
+      - name: SStep 7/2- kip CloudFormation deployment (if repository exists)
         if: env.SKIP_CREATION == 'true'
         run: |
           echo "Skipping CloudFormation deployment because the ECR repository already exists."
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Step 8- Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }} # ECR registery path from ecr Like: 123456789.dkr.ecr.us-east-1.amazonaws.com
@@ -118,7 +121,7 @@ jobs:
           echo "ecr_image_uri=$ecr_image_uri" >> $GITHUB_ENV
           echo $ecr_image_uri
 
-      - name: Deploy CloudFormation Stack for Task Definition
+      - name: Step 9- Deploy CloudFormation Stack for Task Definition
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
           aws cloudformation delete-stack --stack-name ${{ env.TASK_CF_NAME }}
@@ -137,7 +140,7 @@ jobs:
                 LogGroupName="/ecs/${{ env.TASK_NAME }}" \
             --capabilities CAPABILITY_IAM
 
-      - name: ECS-Cluster stack with AWS CloudFormation template
+      - name: Step 10- ECS-Cluster stack with AWS CloudFormation template
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
           aws cloudformation delete-stack --stack-name ${{ env.ECS_TASK_NAME }}
@@ -149,3 +152,48 @@ jobs:
                 ClusterName=${{ env.ECS_CLUSTER_NAME }} \
                 "Infrastructure=${{ env.ECS_CLUSTER_INFRA }}" \
             --capabilities CAPABILITY_IAM
+      
+      
+      - name: Step 11- Get default VPC and subnets
+        id: vpc
+        run: |
+          # Get default VPC ID
+          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)
+          echo "vpc_id=${VPC_ID}" >> $GITHUB_OUTPUT
+          
+          # Get default security group ID for the default VPC
+          SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=${VPC_ID}" "Name=group-name,Values=default" --query "SecurityGroups[0].GroupId" --output text)
+          echo "sg_id=${SG_ID}" >> $GITHUB_OUTPUT
+          
+          # Get subnet IDs for the default VPC
+          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
+          echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
+
+      - name: Step 12- Read config file
+        id: config
+        run: |
+          echo "config=$(cat config/config.json | jq -c)" >> $GITHUB_OUTPUT
+
+      - name: Step 13- Delete existing CloudFormation stack
+        run: |
+          aws cloudformation delete-stack --stack-name ${{ fromJson(steps.config.outputs.config).ECSClusterServiceStackName }}
+          # Wait for 20 Seconds after deleting the Cloud formmation stack   
+          sleep 20
+
+      - name: Step 14- Deploy AWS CloudFormation template
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: ${{ fromJson(steps.config.outputs.config).ECSClusterServiceStackName }}
+          template: cloudformation/ecs_service_deploy.yml
+          parameter-overrides: >-
+            ClusterName=${{ env.ECS_CLUSTER_NAME }},
+            TaskDefinitionFamily=${{ env.ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY }},
+            ServiceName="${{ env.TASK_NAME }}-${{ inputs.tag }}",
+            DesiredCount=${{ env.ECS_DEPLOY_CONFIG_DESIRED_TASK }},
+            SubnetIds=${{ steps.vpc.outputs.subnet_ids }},
+            SecurityGroupId=${{ steps.vpc.outputs.sg_id }},
+            CapacityProviderName=${{ env.ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER }},
+            CapacityProviderBase=1,
+            CapacityProviderWeight=1,
+            PlatformVersion=LATEST,
+          no-fail-on-empty-changeset: "1"
