@@ -82,10 +82,6 @@ Outputs:
     Description: The name of the ECS service
     Value: !Ref ECSService
   
-  ServiceArn:
-    Description: The ARN of the ECS service
-    Value: !GetAtt ECSService.Arn
-  
   ClusterName:
     Description: The name of the ECS cluster
     Value: !Ref ClusterName
