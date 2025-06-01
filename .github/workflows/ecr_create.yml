@@ -176,7 +176,7 @@ jobs:
           # Ensure no empty values remain
           SUBNET_IDS=$(echo "$SUBNET_IDS" | sed 's/,$//' | sed 's/^,//')
           
-          echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUTTASK_NAME
+          echo "subnet_ids=${SUBNET_IDS}" >> $GITHUB_OUTPUT
           
           # Debug output to verify the format
           echo "Debug - Final subnet IDs: '$SUBNET_IDS'"
