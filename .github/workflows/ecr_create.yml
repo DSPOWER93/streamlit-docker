@@ -140,6 +140,19 @@ jobs:
                 LogGroupName="/ecs/${{ env.TASK_NAME }}" \
             --capabilities CAPABILITY_IAM
 
+      - name: Step 9.5- Create CloudWatch Log Group
+        run: |
+          # Create log group if it doesn't exist
+          aws logs create-log-group \
+            --log-group-name "/ecs/${{ env.TASK_NAME }}" \
+            --region ${{ vars.AWS_REGION }} || echo "Log group already exists or creation failed"
+          
+          # Set retention policy (optional)
+          aws logs put-retention-policy \
+            --log-group-name "/ecs/${{ env.TASK_NAME }}" \
+            --retention-in-days 365 \
+            --region ${{ vars.AWS_REGION }} || echo "Failed to set retention policy"
+
       - name: Step 10- ECS-Cluster stack with AWS CloudFormation template
         run: |
           # Ensure cloudformation stack doesn't exist before creating a new one.
@@ -206,24 +219,3 @@ jobs:
           parameter-overrides: 'ClusterName=${{ env.ECS_CLUSTER_NAME }},TaskDefinitionFamily=${{ env.ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY }},ServiceName=${{ env.CLEAN_SERVICE_NAME }},DesiredCount=${{ env.ECS_DEPLOY_CONFIG_DESIRED_TASK }},SubnetIds="${{ steps.validate.outputs.clean_subnet_ids || steps.vpc.outputs.subnet_ids }}",SecurityGroupId=${{ steps.vpc.outputs.sg_id }},CapacityProviderName=${{ env.ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER }},CapacityProviderBase=1,CapacityProviderWeight=1,PlatformVersion=LATEST'
           no-fail-on-empty-changeset: "1"
         
-
-
-
-
-      # - name: Step 14- Deploy AWS CloudFormation template
-      # uses: aws-actions/aws-cloudformation-github-deploy@v1
-      # with:
-      #   name: ${{ fromJson(steps.config.outputs.config).ECSClusterServiceStackName }}
-      #   template: cloudformation/ecs_service_deploy.yml
-      #   parameter-overrides: |
-      #     ClusterName=${{ env.ECS_CLUSTER_NAME }}
-      #     TaskDefinitionFamily=${{ env.ECS_DEPLOY_CONFIG_TASK_DEF_FAMILY }}
-      #     ServiceName=${{ env.TASK_NAME }}-${{ inputs.tag }}
-      #     DesiredCount=${{ env.ECS_DEPLOY_CONFIG_DESIRED_TASK }}
-      #     SubnetIds="${{ steps.validate.outputs.clean_subnet_ids || steps.vpc.outputs.subnet_ids }}"
-      #     SecurityGroupId=${{ steps.vpc.outputs.sg_id }}
-      #     CapacityProviderName=${{ env.ECS_COMPUTE_CONFIG_CAPICITY_PROVIDER }}
-      #     CapacityProviderBase=1
-      #     CapacityProviderWeight=1
-      #     PlatformVersion=LATEST
-      #   no-fail-on-empty-changeset: "1"
